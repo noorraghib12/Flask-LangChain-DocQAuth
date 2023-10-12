@@ -1,0 +1,31 @@
+<!-- Jinja template inheritance -->
+{% extends "base.html" %} {% block title %}Question LLM{% endblock %}
+
+{% block content %}
+<h1 align="center" style="color:black"><em><strong>Hello, {{user.first_name}}, Feel free to ask your birthdate related queries here.</strong></em><h1> 
+<form method="POST" action="/">
+    <textarea name="user_q" class="form-control">Add question</textarea>
+    <br />
+    <div align="center">
+        <button type="submit" class="btn btn-primary">Ask LLM</button>
+    </div>
+</form>
+{% if chat_history %}
+    {% for (human,ai) in chat_history %}
+        <div class="chat-message user">
+            <div class="avatar">
+                <img src="https://i.ibb.co/rdZC7LZ/Photo-logo-1.png">
+            </div>    
+            <div class="message">{{human}}</div>
+        </div>
+        <div class="chat-message bot">
+            <div class="avatar">
+                <img src="https://i.ibb.co/cN0nmSj/Screenshot-2023-05-28-at-02-37-21.png">
+            </div>
+            <div class="message">{{ai}}</div>
+        </div>
+        
+    {% endfor %}
+{% endif %}
+
+{% endblock %}

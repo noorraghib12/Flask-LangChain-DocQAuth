@@ -1,0 +1,36 @@
+{% extends "base.html" %} {% block title %}Signup{% endblock %}
+
+{% block content %}
+<style>
+    h3{
+        font-size:500%;
+        color:white;
+    }
+    label{
+        font-size:150%;
+        color:white;
+    }
+</style>
+
+<form method="POST" action="/signup">
+    <h3 align="center"><em><strong>Sign Up</strong></em></h3>
+    <br />
+    <br />
+    <br />
+    <div class="form-group">
+        <label for="firstName"><strong>First Name</strong></label>
+        <input type="text" class="form-control" id="firstName" name="firstName" placeholder="Enter your first name">
+        <br />
+        <label for="email"><strong>Email Address</strong></label>
+        <input type="email" class="form-control" id="email" name="email" placeholder="Enter Email Address">
+        <br />
+        <label for="password1"><strong>Password</strong></label>
+        <input type="password" class="form-control" id="password1" name="password1" placeholder="Enter password">
+        <br />
+        <label for="password2"><strong>Confirm Password</strong></label>
+        <input type="password" class="form-control" id="password2" name="password2" placeholder="Confirm password">
+    </div>
+    <br />
+    <button type="submit" class="btn btn-primary">Submit</button>
+</form>
+{% endblock %}
