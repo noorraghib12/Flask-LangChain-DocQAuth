@@ -1,3 +1,5 @@
+from dotenv import load_dotenv
+load_dotenv()
 from flask import (Flask, 
                    request,
                    current_app,
@@ -24,48 +26,46 @@ from langchain.vectorstores import Chroma
 import os
 from typing import Sequence,Tuple
 import asyncio
+from server_utils import get_main_chain
 # views=Blueprint('views',__name__)
 
 
-def get_conversation_chain(vectorstore):
-    llm=ChatOpenAI()
-    general_system_template = """ You infer birthdays based on user questions. Use the retrieved context to infer answers to questions at the end.     
-    ----
-    CONTEXT = {context}
-    ----
-    """
-    general_user_template=""" Here is the next question along with conversation. Try to use your contexts from system along with chat history to provide proper answers. Most of the questions will be about inferring the date of birth for person 'X' given some event that occurred and a timespan between the birth of person 'X' and the occurred event. If the timespan is provided in days within the question, answer with full day, month and year of birth. If it is provided in months, provide answer with month and year of birth only.
-    ----
-    QUESTION = {question}
-    ----
-    CHAT HISTORY = {chat_history}
-    ----
-    """
-    messages = [
-            SystemMessagePromptTemplate.from_template(general_system_template),
-            HumanMessagePromptTemplate.from_template(general_user_template)
-            ]
-    qa_prompt = ChatPromptTemplate.from_messages( messages )
-    conversation_chain=ConversationalRetrievalChain.from_llm(
-        llm=llm,
-        retriever=vectorstore.as_retriever(),
-        get_chat_history=get_chat_history,        
-        combine_docs_chain_kwargs={'prompt': qa_prompt}
-    )
-    return conversation_chain
+def regex_text_splitter(pdf_path='test_grey (1).pdf', deli_='\n\n'):
 
+
+    if isinstance(pdf_path,str):
+
+        reader=PdfReader(pdf_path)
+        text=""
+        for page in reader.pages:
+            text+=page.extract_text()
+        split_patt=r'((?:January|February|March|April|July|August|September|November|December))'
+        
+        text=re.sub(split_patt,r'{}\1'.format(deli_),text)
+        inp_list=text.split(deli_)
+
+        return [i.strip().replace('\n', r"") for i in inp_list]
+    else:
+
+        extended_list=[]
+        for pdf in pdf_path:
+            extended_list.extend(regex_text_splitter(pdf,deli_=deli_))
+    
+        return extended_list
+    
+    
 async def handle_userinput(user_question,conversation,chat_history):
     # bot=cache.get('conversation')
-    response= conversation({"question": user_question,"chat_history":chat_history})
+    response= conversation.invoke(user_question)
+    print(chat_history)
+    print(response)
+    result={'question':user_question,
+            'answer':response,
+            'chat_history':chat_history}
     # cache.set('chat_history',response['chat_history'])
-    return response
+    return result
 
 
-
-def load_conversation(db_dir):
-    embeddings=OpenAIEmbeddings()
-    db=Chroma(persist_directory=db_dir, embedding_function=embeddings)
-    return get_conversation_chain(db)
 
 
 
@@ -94,18 +94,21 @@ async def query():
 async def load_docs():
     data=request.get_json()
     pdf_docs: Sequence[str] = data.get('pdf_docs')
-    print(pdf_docs)
-    raw_text = get_pdf_text(pdf_docs)
-    text_chunks = get_text_chunks(raw_text)
-    vectorstore = get_vectorstore(text_chunks=text_chunks,p_dir=app.config['VECTOR_DIR'])
-    current_app.conversation = get_conversation_chain(vectorstore)
+    text_chunks = regex_text_splitter(pdf_path=pdf_docs)
+    current_app.vectorstore.add_text(text_chunks)
+    current_app.conversation = get_main_chain(db=current_app.vectorstore)
     # cache.set('conversation',conversation)
     return jsonify({'pdf_docs':pdf_docs})
+
+
+    
+
 
 
 if __name__=='__main__':
 
     with app.app_context():
-        current_app.conversation= load_conversation(app.config['VECTOR_DIR'])
+        current_app.vectorstore= get_vectorstore(text_chunks=[],p_dir=app.config['VECTOR_DIR'])
+        current_app.conversation= get_main_chain(current_app.vectorstore)
     app.run(port=3000,debug=True)
     # wsgi.server(eventlet.listen(('127.0.0.1',3000)), app)

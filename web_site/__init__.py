@@ -38,8 +38,8 @@ def get_pdf_text(pdf_docs):
 def get_text_chunks(text):
     text_splitter= CharacterTextSplitter(
         separator='\n',
-        chunk_size=1000,
-        chunk_overlap=200,
+        chunk_size=150,
+        chunk_overlap=150,
         length_function=len
 
     )
@@ -47,10 +47,10 @@ def get_text_chunks(text):
     return chunks
 
 def get_vectorstore(text_chunks,p_dir):
-    print(text_chunks)
     embeddings=OpenAIEmbeddings() 
     vectorstore=Chroma(persist_directory=p_dir, embedding_function=embeddings)
-    vectorstore.add_texts(text_chunks)
+    if text_chunks:
+        vectorstore.add_texts(text_chunks)
     return vectorstore
 
 def get_chat_history(inputs) -> str:
@@ -62,13 +62,17 @@ def get_chat_history(inputs) -> str:
 
 
 
+
+
+
 def get_conversation_chain(vectorstore):
     llm=ChatOpenAI()
     custom_template = """Given the following conversation and a question, find further contextual information about the question from your vectorstore and answer accordingly. In case the question is about a date, answer with only the approximate date inferred from the information you have gathered. 
                         Chat History:
                         {chat_history}
-                        Question: {question}
-                        Answer:"""
+                        Question: 
+                        {question}
+                        """
     q_template=PromptTemplate.from_template(custom_template)
 
     conversation_chain=ConversationalRetrievalChain.from_llm(
@@ -78,10 +82,14 @@ def get_conversation_chain(vectorstore):
     )
     return conversation_chain
 
+
+
+
 def handle_userinput(user_question,conversation,chat_history):
     # bot=cache.get('conversation')
     bot=conversation
-    response=bot({"question": user_question,"chat_history":chat_history})
+    response=bot({"statement": user_question})
+
     # cache.set('chat_history',response['chat_history'])
     return response
 

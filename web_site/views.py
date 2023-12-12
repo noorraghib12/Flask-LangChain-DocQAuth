@@ -16,14 +16,14 @@ from langchain.schema import AIMessage,HumanMessage
 from flask_login import login_required,current_user
 from .models import Queries
 import os
-
+from sqlalchemy import desc
 
 def load_current_chat():
     chat_history=[]
-    chat_=db.session.query(Queries).filter(Queries.user_id==current_user.id).order_by(Queries.date).limit(10)
+    chat_=db.session.query(Queries).filter(Queries.user_id==current_user.id).order_by(desc(Queries.date)).limit(10)
     for chat in chat_:
         chat_history.append((chat.query,chat.answer))
-    return chat_history    
+    return chat_history[::-1]    
 
 
 
