@@ -1,5 +1,4 @@
-FROM ubuntu:latest
-
+FROM python:3.10-slim-bullseye
 #RUN echo "deb http://security.debian.org/debian-security bullseye-security main contrib non-free\ndeb http://httpredir.debian.org/debian jessie main contrib\ndeb-src http://httpredir.debian.org/debian jessie main contrib\ndeb http://httpredir.debian.org/debian jessie-updates main contrib\ndeb-src http://httpredir.debian.org/debian jessie-updates main contrib\ndeb http://security.debian.org/ jessie/updates main contrib\ndeb-src http://security.debian.org/ jessie/updates main contrib " >> /etc/apt/sources.list
 
 
