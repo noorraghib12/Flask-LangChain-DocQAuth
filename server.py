@@ -26,33 +26,11 @@ from langchain.vectorstores import Chroma
 import os
 from typing import Sequence,Tuple
 import asyncio
-from server_utils import get_main_chain
+from server_utils import get_main_chain,regex_text_splitter
+
 # views=Blueprint('views',__name__)
 
 
-def regex_text_splitter(pdf_path='test_grey (1).pdf', deli_='\n\n'):
-
-
-    if isinstance(pdf_path,str):
-
-        reader=PdfReader(pdf_path)
-        text=""
-        for page in reader.pages:
-            text+=page.extract_text()
-        split_patt=r'((?:January|February|March|April|July|August|September|November|December))'
-        
-        text=re.sub(split_patt,r'{}\1'.format(deli_),text)
-        inp_list=text.split(deli_)
-
-        return [i.strip().replace('\n', r"") for i in inp_list]
-    else:
-
-        extended_list=[]
-        for pdf in pdf_path:
-            extended_list.extend(regex_text_splitter(pdf,deli_=deli_))
-    
-        return extended_list
-    
     
 async def handle_userinput(user_question,conversation,chat_history):
     # bot=cache.get('conversation')
@@ -95,7 +73,7 @@ async def load_docs():
     data=request.get_json()
     pdf_docs: Sequence[str] = data.get('pdf_docs')
     text_chunks = regex_text_splitter(pdf_path=pdf_docs)
-    current_app.vectorstore.add_text(text_chunks)
+    current_app.vectorstore.add_texts(text_chunks)
     current_app.conversation = get_main_chain(db=current_app.vectorstore)
     # cache.set('conversation',conversation)
     return jsonify({'pdf_docs':pdf_docs})

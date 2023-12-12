@@ -24,7 +24,8 @@ from pydantic import BaseModel,Field,model_validator
 from langchain.pydantic_v1 import validator
 from langchain.output_parsers import DatetimeOutputParser
 from typing import List
-
+import regex as re
+from PyPDF2 import PdfReader
 
 os.environ["GOOGLE_APPLICATION_CREDENTIALS"]=r'google_cred.json'
 from google.cloud import translate_v2 
@@ -32,6 +33,32 @@ translate_model=translate_v2.Client()
 
 embeddings=OpenAIEmbeddings() 
 llm = OpenAI(model_name="text-davinci-003")
+
+
+
+def regex_text_splitter(pdf_path='test_grey (1).pdf', deli_='\n\n'):
+
+
+    if isinstance(pdf_path,str):
+
+        reader=PdfReader(pdf_path)
+        text=""
+        for page in reader.pages:
+            text+=page.extract_text()
+        split_patt=r'((?:January|February|March|April|July|August|September|November|December))'
+        
+        text=re.sub(split_patt,r'{}\1'.format(deli_),text)
+        inp_list=text.split(deli_)
+
+        return [i.strip().replace('\n', r"") for i in inp_list]
+    else:
+
+        extended_list=[]
+        for pdf in pdf_path:
+            extended_list.extend(regex_text_splitter(pdf,deli_=deli_))
+    
+        return extended_list
+    
 
 
 class eventBoolRetrieve(BaseModel):
